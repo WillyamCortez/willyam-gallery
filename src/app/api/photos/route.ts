@@ -1,0 +1,67 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClientServer } from "@/lib/supabase/server";
+import { deleteR2Object } from "@/lib/r2/client";
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const {
+      galleryId,
+      sectionId,
+      r2Key,
+      originalFilename,
+      width,
+      height,
+      aspectRatio,
+      orderIndex,
+    } = body;
+
+    if (!galleryId || !r2Key || !originalFilename) {
+      return NextResponse.json(
+        { error: "galleryId, r2Key e originalFilename são obrigatórios." },
+        { status: 400 }
+      );
+    }
+
+    if (
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-project")
+    ) {
+      const supabase = createClientServer();
+      const { data, error } = await supabase
+        .from("photos")
+        .insert({
+          gallery_id: galleryId,
+          section_id: sectionId || null,
+          r2_key: r2Key,
+          original_filename: originalFilename,
+          width: width || 2400,
+          height: height || 1600,
+          aspect_ratio: aspectRatio || 1.5,
+          order_index: orderIndex || 0,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Erro ao salvar foto no Supabase:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, photo: data });
+    }
+
+    return NextResponse.json({
+      success: true,
+      photo: {
+        id: `photo-${Date.now()}`,
+        gallery_id: galleryId,
+        r2_key: r2Key,
+        original_filename: originalFilename,
+      },
+    });
+  } catch (error: any) {
+    console.error("Erro na rota de criação de foto:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

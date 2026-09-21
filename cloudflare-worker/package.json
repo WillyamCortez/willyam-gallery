@@ -1,0 +1,15 @@
+{
+  "name": "gallery-media-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for dynamic image resizing, watermarking and R2 media proxy",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241112.0",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.88.0"
+  }
+}
