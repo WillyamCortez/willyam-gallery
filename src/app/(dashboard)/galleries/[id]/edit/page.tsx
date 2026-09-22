@@ -82,14 +82,29 @@ export default function EditGalleryPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleDeleteGallery = async () => {
+    setIsDeleting(true);
     setShowDeleteModal(false);
-    router.push("/dashboard");
+
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("willyam_galleries");
+      if (saved) {
+        try {
+          const list = JSON.parse(saved);
+          const updated = list.filter((g: any) => g.id !== gallery.id && g.slug !== gallery.slug);
+          localStorage.setItem("willyam_galleries", JSON.stringify(updated));
+        } catch (e) {}
+      }
+    }
+
     try {
       await fetch(`/api/galleries/${gallery.id}`, {
         method: "DELETE",
       });
     } catch (e) {
       console.warn("Failed to delete gallery via API:", e);
+    } finally {
+      setIsDeleting(false);
+      router.push("/dashboard");
     }
   };
 

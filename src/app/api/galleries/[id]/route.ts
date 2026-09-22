@@ -110,9 +110,19 @@ export async function DELETE(
       !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-project")
     ) {
       const supabase = createClientServer();
-      const { error } = await supabase.from("galleries").delete().eq("id", galleryId);
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(galleryId);
+
+      let query = supabase.from("galleries").delete();
+      if (isUUID) {
+        query = query.eq("id", galleryId);
+      } else {
+        query = query.eq("slug", galleryId);
+      }
+
+      const { error } = await query;
 
       if (error) {
+        console.error("Erro ao excluir galeria do Supabase:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
     }

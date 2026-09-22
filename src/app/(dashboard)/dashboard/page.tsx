@@ -18,7 +18,17 @@ import {
 } from "lucide-react";
 
 export default function PhotographerDashboardPage() {
-  const [galleries, setGalleries] = useState(mockGalleries);
+  const [galleries, setGalleries] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("willyam_galleries");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {}
+      }
+    }
+    return mockGalleries;
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [currentCategory, setCurrentCategory] = useState<GalleryCategory>("all");
   const [galleryToDelete, setGalleryToDelete] = useState<string | null>(null);
@@ -31,12 +41,15 @@ export default function PhotographerDashboardPage() {
         const res = await fetch("/api/galleries");
         if (res.ok) {
           const data = await res.json();
-          if (data?.galleries && data.galleries.length > 0) {
+          if (data?.galleries && Array.isArray(data.galleries)) {
             setGalleries(data.galleries);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("willyam_galleries", JSON.stringify(data.galleries));
+            }
           }
         }
       } catch (err) {
-        console.warn("Erro ao buscar galerias do Supabase, usando mocks:", err);
+        console.warn("Erro ao buscar galerias do Supabase, usando dados locais:", err);
       }
     }
     loadGalleries();
@@ -56,10 +69,16 @@ export default function PhotographerDashboardPage() {
   const confirmDeleteGallery = async () => {
     if (!galleryToDelete) return;
     const targetId = galleryToDelete;
+    setIsDeleting(true);
     
-    // Atualização otimista imediata na interface (remove instantaneamente)
-    setGalleries((prev) => prev.filter((g) => g.id !== targetId));
-    setGalleryToDelete(null);
+    // Atualização otimista imediata na interface e no localStorage
+    setGalleries((prev) => {
+      const next = prev.filter((g) => g.id !== targetId && g.slug !== targetId);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("willyam_galleries", JSON.stringify(next));
+      }
+      return next;
+    });
 
     try {
       await fetch(`/api/galleries/${targetId}`, {
@@ -67,6 +86,9 @@ export default function PhotographerDashboardPage() {
       });
     } catch (e) {
       console.warn("Background API delete warning:", e);
+    } finally {
+      setIsDeleting(false);
+      setGalleryToDelete(null);
     }
   };
 
