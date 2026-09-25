@@ -23,9 +23,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseUrl = rawUrl?.trim().replace(/^["']|["']$/g, "");
+
     if (
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-project")
+      supabaseUrl &&
+      !supabaseUrl.includes("your-project")
     ) {
       const supabase = createClientServer();
       const { data, error } = await supabase

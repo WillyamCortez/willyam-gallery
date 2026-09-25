@@ -9,9 +9,12 @@ export async function GET(
   try {
     const galleryId = params.id;
 
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseUrl = rawUrl?.trim().replace(/^["']|["']$/g, "");
+
     if (
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-project")
+      supabaseUrl &&
+      !supabaseUrl.includes("your-project")
     ) {
       const supabase = createClientServer();
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(galleryId);
@@ -51,9 +54,12 @@ export async function PUT(
     const galleryId = params.id;
     const body = await request.json();
 
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseUrl = rawUrl?.trim().replace(/^["']|["']$/g, "");
+
     if (
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-project")
+      supabaseUrl &&
+      !supabaseUrl.includes("your-project")
     ) {
       const supabase = createClientServer();
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(galleryId);
@@ -112,9 +118,12 @@ export async function DELETE(
     }
 
     // 2. Exclui a galeria e registros relacionados no Supabase (CASCADE exclui photos, sections e selections)
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseUrl = rawUrl?.trim().replace(/^["']|["']$/g, "");
+
     if (
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-project")
+      supabaseUrl &&
+      !supabaseUrl.includes("your-project")
     ) {
       const supabase = createClientServer();
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(galleryId);

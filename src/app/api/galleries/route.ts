@@ -3,9 +3,11 @@ import { createClientServer } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseUrl = rawUrl?.trim().replace(/^["']|["']$/g, "");
     if (
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-project")
+      supabaseUrl &&
+      !supabaseUrl.includes("your-project")
     ) {
       const supabase = createClientServer();
       const { data, error } = await supabase
@@ -57,10 +59,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-project")
-    ) {
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseUrl = rawUrl?.trim().replace(/^["']|["']$/g, "");
+    const isSupabaseConfigured = Boolean(
+      supabaseUrl && !supabaseUrl.includes("your-project")
+    );
+
+    if (isSupabaseConfigured) {
       const supabase = createClientServer();
 
       let photographerId: string | undefined = undefined;
