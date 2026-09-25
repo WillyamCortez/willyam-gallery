@@ -21,7 +21,7 @@ export const CoverHero: React.FC<CoverHeroProps> = ({ gallery, onScrollToGallery
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
         className="absolute inset-0 bg-cover bg-center z-0 filter brightness-[0.75]"
         style={{
-          backgroundImage: `url(${gallery.cover_image_key || "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2400&q=90"})`,
+          backgroundImage: `url(${gallery.cover_image_url || gallery.cover_image_key || "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2400&q=90"})`,
         }}
       />
 

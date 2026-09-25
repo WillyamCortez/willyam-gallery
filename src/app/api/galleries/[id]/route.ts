@@ -78,7 +78,8 @@ export async function GET(
       return NextResponse.json({
         gallery: {
           ...data,
-          cover_image_key: coverUrl,
+          cover_image_key: data.cover_image_key,
+          cover_image_url: coverUrl,
           sections: sortedSections,
           photos: photosWithUrls,
         },
@@ -111,18 +112,24 @@ export async function PUT(
         typeof val === "string" &&
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
+      const updatePayload: any = {
+        title: body.title,
+        status: body.status,
+        photo_limit: body.photo_limit,
+        extra_photo_price: body.extra_photo_price,
+        access_pin: body.access_pin,
+        google_drive_url: body.google_drive_url,
+        selection_locked_at: body.selection_locked_at,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (body.cover_image_key !== undefined) {
+        updatePayload.cover_image_key = body.cover_image_key;
+      }
+
       let query = supabase
         .from("galleries")
-        .update({
-          title: body.title,
-          status: body.status,
-          photo_limit: body.photo_limit,
-          extra_photo_price: body.extra_photo_price,
-          access_pin: body.access_pin,
-          google_drive_url: body.google_drive_url,
-          selection_locked_at: body.selection_locked_at,
-          updated_at: new Date().toISOString(),
-        });
+        .update(updatePayload);
 
       if (checkIsUUID(galleryId)) {
         query = query.eq("id", galleryId);

@@ -17,6 +17,8 @@ import {
   ExternalLink,
   Lock,
   Unlock,
+  Star,
+  Image as ImageIcon,
 } from "lucide-react";
 
 export default function EditGalleryPage() {
@@ -110,6 +112,32 @@ export default function EditGalleryPage() {
       });
     } catch (e) {
       console.warn("Erro ao excluir foto:", e);
+    }
+  };
+
+  const handleSetCoverPhoto = async (photo: Photo) => {
+    const newCoverKey = photo.r2_key;
+    const newCoverUrl = photo.thumbnail_url || photo.preview_url;
+    setGallery((prev: any) => ({
+      ...prev,
+      cover_image_key: newCoverKey,
+      cover_image_url: newCoverUrl,
+    }));
+
+    try {
+      await fetch(`/api/galleries/${gallery.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...gallery,
+          cover_image_key: newCoverKey,
+          sections,
+        }),
+      });
+      setSaveToast(true);
+      setTimeout(() => setSaveToast(false), 2500);
+    } catch (err) {
+      console.warn("Erro ao salvar nova capa:", err);
     }
   };
 
@@ -252,36 +280,111 @@ export default function EditGalleryPage() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-[500px] overflow-y-auto pr-1 scrollbar-none">
-              {photos.map((photo) => (
-                <div
-                  key={photo.id}
-                  className="group relative aspect-square rounded overflow-hidden bg-black border border-white/10"
-                >
-                  <img
-                    src={photo.thumbnail_url || photo.preview_url}
-                    alt={photo.original_filename}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-                    <button
-                      onClick={() => handleDeletePhoto(photo.id)}
-                      className="self-end p-1.5 rounded bg-rose-600/80 hover:bg-rose-600 text-white"
-                      title="Excluir foto"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="text-[10px] text-white/90 truncate font-mono">
-                      {photo.original_filename}
-                    </span>
+              {photos.map((photo) => {
+                const isCover =
+                  gallery.cover_image_key === photo.r2_key ||
+                  (gallery.cover_image_url && gallery.cover_image_url === photo.preview_url);
+
+                return (
+                  <div
+                    key={photo.id}
+                    className={`group relative aspect-square rounded overflow-hidden bg-black border transition-all ${
+                      isCover ? "border-amber-400 ring-2 ring-amber-400/50" : "border-white/10"
+                    }`}
+                  >
+                    <img
+                      src={photo.thumbnail_url || photo.preview_url}
+                      alt={photo.original_filename}
+                      className="w-full h-full object-cover"
+                    />
+
+                    {/* Badge fixo da Capa */}
+                    {isCover && (
+                      <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-bold flex items-center gap-1 shadow">
+                        <Star className="w-3 h-3 fill-black" />
+                        <span>Capa</span>
+                      </div>
+                    )}
+
+                    {/* Overlay de Ações ao passar o mouse */}
+                    <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2 z-20">
+                      <div className="flex items-center justify-between gap-1">
+                        {!isCover ? (
+                          <button
+                            type="button"
+                            onClick={() => handleSetCoverPhoto(photo)}
+                            className="p-1.5 px-2 rounded bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-black transition-colors flex items-center gap-1 text-[11px] font-semibold border border-amber-500/30"
+                            title="Definir esta foto como capa do álbum"
+                          >
+                            <Star className="w-3 h-3" />
+                            <span>Definir Capa</span>
+                          </button>
+                        ) : (
+                          <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-amber-400" />
+                            <span>Capa Atual</span>
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePhoto(photo.id)}
+                          className="p-1.5 rounded bg-rose-600/80 hover:bg-rose-600 text-white ml-auto transition-colors"
+                          title="Excluir foto"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <span className="text-[10px] text-white/90 truncate font-mono">
+                        {photo.original_filename}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
 
         {/* Coluna Direita: Status, Configurações e Seções */}
         <form onSubmit={handleSave} className="lg:col-span-4 space-y-6">
+          {/* Card de Capa do Álbum */}
+          <div className="bg-surface-900 border border-white/10 rounded-lg p-6 space-y-3">
+            <h3 className="text-sm font-semibold text-white flex items-center justify-between pb-2 border-b border-white/10">
+              <span className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-accent-gold" />
+                <span>Capa do Álbum</span>
+              </span>
+              {gallery.cover_image_key && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium">
+                  Personalizada
+                </span>
+              )}
+            </h3>
+
+            {gallery.cover_image_url || gallery.cover_image_key ? (
+              <div className="relative aspect-video rounded overflow-hidden bg-black border border-white/10">
+                <img
+                  src={gallery.cover_image_url || gallery.cover_image_key}
+                  alt="Capa da galeria"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-2 left-2 px-2 py-1 rounded bg-black/70 backdrop-blur-xs text-[10px] text-white flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  <span>Foto de Capa Atual</span>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 rounded border border-dashed border-white/20 text-center text-xs text-white/50">
+                Nenhuma capa selecionada. Passe o mouse sobre qualquer foto ao lado e clique em <strong className="text-amber-300">"Definir Capa"</strong>.
+              </div>
+            )}
+            <p className="text-[11px] text-white/40">
+              Esta é a imagem que seus clientes verão em tela cheia ao abrir o link do álbum.
+            </p>
+          </div>
+
           {/* Status da Galeria */}
           <div className="bg-surface-900 border border-white/10 rounded-lg p-6 space-y-4">
             <h3 className="text-sm font-semibold text-white pb-2 border-b border-white/10">

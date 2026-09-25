@@ -23,6 +23,7 @@ export interface Gallery {
   slug: string;
   description: string | null;
   cover_image_key: string | null;
+  cover_image_url?: string | null;
   client_name: string;
   client_email: string | null;
   client_phone: string | null;
