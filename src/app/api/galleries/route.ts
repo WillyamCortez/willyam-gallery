@@ -63,11 +63,62 @@ export async function POST(request: NextRequest) {
     ) {
       const supabase = createClientServer();
 
-      // Busca fotógrafo existente no banco
-      const { data: profiles } = await supabase.from("profiles").select("id").limit(1);
-      let photographerId = profiles?.[0]?.id;
+      let photographerId: string | undefined = undefined;
+
+      // 1. Tenta obter o ID do fotógrafo através do usuário autenticado
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          photographerId = user.id;
+          // Garantir que a tabela profiles possua um registro para este usuário
+          const { data: existingProfile } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (!existingProfile) {
+            await supabase.from("profiles").insert({
+              id: user.id,
+              full_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Fotógrafo",
+              email: user.email || "contato@estudio.com",
+            });
+          }
+        }
+      } catch (authErr) {
+        console.warn("Usuário autenticado não encontrado:", authErr);
+      }
+
+      // 2. Caso não esteja autenticado via Supabase Auth, busca um perfil existente
+      if (!photographerId) {
+        const { data: profiles } = await supabase.from("profiles").select("id").limit(1);
+        photographerId = profiles?.[0]?.id;
+      }
+
+      // 3. Se a tabela profiles estiver vazia, cria um perfil padrão para não violar a NOT NULL constraint
+      if (!photographerId) {
+        const defaultProfileId = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+        const { data: insertedProfile } = await supabase
+          .from("profiles")
+          .upsert(
+            {
+              id: defaultProfileId,
+              full_name: "Willyam Cortez",
+              studio_name: "Willyam Cortez Fotografia",
+              email: "willyamdepaivacortez02@gmail.com",
+              phone: "+55 (53) 99998-3022",
+              pix_key: "willyamdepaivacortez02@gmail.com",
+            },
+            { onConflict: "id" }
+          )
+          .select("id")
+          .maybeSingle();
+
+        photographerId = insertedProfile?.id || defaultProfileId;
+      }
 
       const galleryPayload: any = {
+        photographer_id: photographerId,
         title,
         slug,
         description: description || null,
@@ -81,10 +132,6 @@ export async function POST(request: NextRequest) {
         event_date: eventDate || null,
         status,
       };
-
-      if (photographerId) {
-        galleryPayload.photographer_id = photographerId;
-      }
 
       // 1. Cria a galeria
       const { data: gallery, error: galleryError } = await supabase

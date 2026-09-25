@@ -7,14 +7,14 @@ INSERT INTO public.profiles (
     id, full_name, studio_name, email, phone, watermark_type, watermark_text, watermark_opacity, pix_key
 ) VALUES (
     'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-    'Lucas & Clara Fotografia',
-    'Lumina Fine Art Studio',
-    'contato@luminafineart.com.br',
-    '+55 (11) 98765-4321',
+    'Willyam Cortez',
+    'Willyam Cortez Fotografia',
+    'willyamdepaivacortez02@gmail.com',
+    '+55 (53) 99998-3022',
     'grid',
-    'LUMINA FINE ART © PROVA',
-    0.30,
-    'contato@luminafineart.com.br'
+    'WILLYAM CORTEZ © PROVA',
+    0.35,
+    'willyamdepaivacortez02@gmail.com'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- Inserir Galeria em Modo de Seleção (Casamento Mariana & Rodrigo)
