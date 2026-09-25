@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { mockGalleries } from "@/lib/mock-data";
-import { Photo } from "@/types";
+import { Photo, GallerySection } from "@/types";
 import { CoverHero } from "@/components/client/CoverHero";
 import { SectionTabs } from "@/components/client/SectionTabs";
 import { MasonryGrid } from "@/components/client/MasonryGrid";
@@ -16,11 +16,31 @@ export default function ClientGalleryPage() {
   const params = useParams();
   const slug = params?.slug as string;
 
-  // Busca galeria por slug nos mocks ou via Supabase
+  // Busca galeria por slug nos mocks, localStorage ou Supabase
   const initialGallery = useMemo(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("willyam_galleries");
+      if (saved) {
+        try {
+          const list = JSON.parse(saved);
+          const found = list.find((g: any) => g.slug === slug || g.id === slug);
+          if (found) return found;
+        } catch (e) {}
+      }
+    }
+
     return (
-      mockGalleries.find((g) => g.slug === slug || g.id === slug) ||
-      mockGalleries[0]
+      mockGalleries.find((g) => g.slug === slug || g.id === slug) || {
+        id: slug,
+        title: "Carregando Galeria...",
+        slug: slug,
+        client_name: "",
+        status: "selection",
+        photo_limit: 20,
+        extra_photo_price: 15,
+        sections: [] as GallerySection[],
+        photos: [] as Photo[],
+      }
     );
   }, [slug]);
 
@@ -60,7 +80,7 @@ export default function ClientGalleryPage() {
   // Mapeamento de seleções locais
   const [selectionsMap, setSelectionsMap] = useState<Record<string, boolean>>(() => {
     const map: Record<string, boolean> = {};
-    gallery.photos?.forEach((p) => {
+    (gallery.photos as Photo[])?.forEach((p: Photo) => {
       if (p.is_selected) map[p.id] = true;
     });
     return map;
@@ -146,9 +166,9 @@ export default function ClientGalleryPage() {
   };
 
   // Filtragem de fotos por Seção e por Favoritas
-  const allPhotos = gallery.photos || [];
+  const allPhotos = (gallery.photos || []) as Photo[];
   const filteredPhotos = useMemo(() => {
-    return allPhotos.filter((p) => {
+    return allPhotos.filter((p: Photo) => {
       // Filtro de Seção
       if (activeSectionId && p.section_id !== activeSectionId) return false;
       // Filtro de Apenas Selecionadas
@@ -159,7 +179,7 @@ export default function ClientGalleryPage() {
 
   // Lista de Fotos Selecionadas para o Modal de Finalização
   const selectedPhotosList = useMemo(() => {
-    return allPhotos.filter((p) => selectionsMap[p.id]);
+    return allPhotos.filter((p: Photo) => selectionsMap[p.id]);
   }, [allPhotos, selectionsMap]);
 
   const selectedCount = selectedPhotosList.length;
@@ -251,7 +271,7 @@ export default function ClientGalleryPage() {
         isOpen={isFinalizeModalOpen}
         onClose={() => setIsFinalizeModalOpen(false)}
         onFinalizeSuccess={() => {
-          setGallery((prev) => ({
+          setGallery((prev: any) => ({
             ...prev,
             selection_locked_at: new Date().toISOString(),
           }));

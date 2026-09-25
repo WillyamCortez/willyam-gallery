@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { mockGalleries } from "@/lib/mock-data";
+import { Photo, GallerySection } from "@/types";
 import { LightroomExportModal } from "@/components/dashboard/LightroomExportModal";
 import {
   ArrowLeft,
@@ -16,14 +17,39 @@ export default function GallerySelectionsReviewPage() {
   const params = useParams();
   const galleryId = params?.id as string;
 
-  const gallery =
-    mockGalleries.find((g) => g.id === galleryId || g.slug === galleryId) ||
-    mockGalleries[0];
+  const getGallery = () => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("willyam_galleries");
+      if (saved) {
+        try {
+          const list = JSON.parse(saved);
+          const found = list.find((g: any) => g.id === galleryId || g.slug === galleryId);
+          if (found) return found;
+        } catch (e) {}
+      }
+    }
+
+    return (
+      mockGalleries.find((g) => g.id === galleryId || g.slug === galleryId) || {
+        id: galleryId,
+        title: "Galeria",
+        slug: galleryId,
+        client_name: "",
+        status: "selection",
+        photo_limit: 20,
+        extra_photo_price: 15,
+        sections: [] as GallerySection[],
+        photos: [] as Photo[],
+      }
+    );
+  };
+
+  const gallery = getGallery();
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const selectedPhotos = useMemo(() => {
-    return gallery.photos?.filter((p) => p.is_selected) || [];
+    return (gallery.photos as Photo[])?.filter((p: Photo) => p.is_selected) || [];
   }, [gallery.photos]);
 
   const totalSelected = selectedPhotos.length;
@@ -100,7 +126,7 @@ export default function GallerySelectionsReviewPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {selectedPhotos.map((photo, index) => (
+          {selectedPhotos.map((photo: Photo, index: number) => (
             <div
               key={photo.id}
               className="bg-surface-900 border border-white/10 rounded-lg overflow-hidden flex flex-col group hover:border-white/25 transition-all shadow-md"

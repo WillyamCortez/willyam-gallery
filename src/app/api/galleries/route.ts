@@ -158,15 +158,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, gallery });
     }
 
-    // Retorno de fallback mock
+    // Retorno de fallback mock completo
+    const createdSections = (sections || []).map((sec: string, index: number) => ({
+      id: `sec-${Date.now()}-${index}`,
+      name: sec.trim(),
+      order_index: index,
+    }));
+
     return NextResponse.json({
       success: true,
       gallery: {
         id: `mock-${Date.now()}`,
         title,
         slug,
+        description: description || null,
         client_name: clientName,
+        client_email: clientEmail || null,
+        client_phone: clientPhone || null,
+        access_pin: accessPin || null,
+        photo_limit: photoLimit || 20,
+        extra_photo_price: extraPhotoPrice || 15.0,
+        google_drive_url: googleDriveUrl || null,
+        event_date: eventDate || null,
         status,
+        sections: createdSections,
+        photos: [],
       },
     });
   } catch (error: any) {

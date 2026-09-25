@@ -24,10 +24,35 @@ export default function EditGalleryPage() {
   const router = useRouter();
   const galleryId = params?.id as string;
 
-  const initialGallery =
-    mockGalleries.find((g) => g.id === galleryId || g.slug === galleryId) ||
-    mockGalleries[0];
+  const getInitialGallery = () => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("willyam_galleries");
+      if (saved) {
+        try {
+          const list = JSON.parse(saved);
+          const found = list.find((g: any) => g.id === galleryId || g.slug === galleryId);
+          if (found) return found;
+        } catch (e) {}
+      }
+    }
 
+    const staticFound = mockGalleries.find((g) => g.id === galleryId || g.slug === galleryId);
+    if (staticFound) return staticFound;
+
+    return {
+      id: galleryId,
+      title: "Carregando Galeria...",
+      slug: galleryId,
+      client_name: "",
+      status: "selection" as GalleryStatus,
+      photo_limit: 20,
+      extra_photo_price: 15.0,
+      sections: [] as GallerySection[],
+      photos: [] as Photo[],
+    };
+  };
+
+  const initialGallery = getInitialGallery();
   const [gallery, setGallery] = useState(initialGallery);
   const [sections, setSections] = useState<GallerySection[]>(initialGallery.sections || []);
   const [photos, setPhotos] = useState<Photo[]>(initialGallery.photos || []);
@@ -232,7 +257,7 @@ export default function EditGalleryPage() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => setGallery((prev) => ({ ...prev, status: "selection" }))}
+                  onClick={() => setGallery((prev: any) => ({ ...prev, status: "selection" }))}
                   className={`p-3 rounded text-center text-sm font-medium transition-all border ${
                     gallery.status === "selection"
                       ? "bg-blue-500/20 border-blue-400 text-blue-300"
@@ -243,7 +268,7 @@ export default function EditGalleryPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setGallery((prev) => ({ ...prev, status: "delivered" }))}
+                  onClick={() => setGallery((prev: any) => ({ ...prev, status: "delivered" }))}
                   className={`p-3 rounded text-center text-sm font-medium transition-all border ${
                     gallery.status === "delivered"
                       ? "bg-emerald-500/20 border-emerald-400 text-emerald-300"
@@ -263,7 +288,7 @@ export default function EditGalleryPage() {
               <button
                 type="button"
                 onClick={() =>
-                  setGallery((prev) => ({
+                  setGallery((prev: any) => ({
                     ...prev,
                     selection_locked_at: prev.selection_locked_at ? null : new Date().toISOString(),
                   }))
@@ -303,7 +328,7 @@ export default function EditGalleryPage() {
                 type="number"
                 value={gallery.photo_limit}
                 onChange={(e) =>
-                  setGallery((prev) => ({
+                  setGallery((prev: any) => ({
                     ...prev,
                     photo_limit: parseInt(e.target.value, 10) || 1,
                   }))
@@ -321,7 +346,7 @@ export default function EditGalleryPage() {
                 step="0.5"
                 value={gallery.extra_photo_price}
                 onChange={(e) =>
-                  setGallery((prev) => ({
+                  setGallery((prev: any) => ({
                     ...prev,
                     extra_photo_price: parseFloat(e.target.value) || 0,
                   }))
@@ -338,7 +363,7 @@ export default function EditGalleryPage() {
                 type="text"
                 value={gallery.access_pin || ""}
                 onChange={(e) =>
-                  setGallery((prev) => ({
+                  setGallery((prev: any) => ({
                     ...prev,
                     access_pin: e.target.value || null,
                   }))
@@ -356,7 +381,7 @@ export default function EditGalleryPage() {
                 type="url"
                 value={gallery.google_drive_url || ""}
                 onChange={(e) =>
-                  setGallery((prev) => ({
+                  setGallery((prev: any) => ({
                     ...prev,
                     google_drive_url: e.target.value || null,
                   }))

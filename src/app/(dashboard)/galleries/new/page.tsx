@@ -66,6 +66,15 @@ export default function NewGalleryPage() {
         throw new Error(data.error || "Erro ao criar galeria");
       }
 
+      // Salva no localStorage para sincronia imediata (modo local/fallback)
+      if (data.gallery && typeof window !== "undefined") {
+        try {
+          const saved = localStorage.getItem("willyam_galleries");
+          const list = saved ? JSON.parse(saved) : [];
+          localStorage.setItem("willyam_galleries", JSON.stringify([data.gallery, ...list]));
+        } catch (e) {}
+      }
+
       // Redireciona diretamente para a tela de upload e edição da nova galeria
       const targetId = data.gallery?.id || data.gallery?.slug || slug;
       router.push(`/galleries/${targetId}/edit`);
