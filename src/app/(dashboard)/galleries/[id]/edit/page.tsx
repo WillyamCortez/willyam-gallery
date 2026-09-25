@@ -100,8 +100,17 @@ export default function EditGalleryPage() {
     setNewSectionName("");
   };
 
-  const handleDeletePhoto = (photoId: string) => {
+  const handleDeletePhoto = async (photoId: string) => {
     setPhotos((prev) => prev.filter((p) => p.id !== photoId));
+    try {
+      await fetch("/api/photos", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoId }),
+      });
+    } catch (e) {
+      console.warn("Erro ao excluir foto:", e);
+    }
   };
 
   const handleUploadSuccess = (newPhoto: Photo) => {

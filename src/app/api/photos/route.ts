@@ -105,3 +105,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { photoId, galleryId } = await request.json();
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseUrl = rawUrl?.trim().replace(/^["']|["']$/g, "");
+
+    if (supabaseUrl && !supabaseUrl.includes("your-project")) {
+      const supabase = createClientServer();
+      let query = supabase.from("photos").delete();
+      if (photoId) {
+        query = query.eq("id", photoId);
+      } else if (galleryId) {
+        query = query.eq("gallery_id", galleryId);
+      }
+      const { error } = await query;
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
