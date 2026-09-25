@@ -43,6 +43,21 @@ export async function getPresignedUploadUrl(
 }
 
 /**
+ * Gera presigned URL para visualização direta no navegador
+ */
+export async function getPresignedViewUrl(
+  key: string,
+  expiresIn = 86400
+): Promise<string> {
+  const command = new GetObjectCommand({
+    Bucket: r2BucketName,
+    Key: key,
+  });
+
+  return getSignedUrl(r2Client, command, { expiresIn });
+}
+
+/**
  * Gera presigned URL para download em alta resolução
  */
 export async function getPresignedDownloadUrl(

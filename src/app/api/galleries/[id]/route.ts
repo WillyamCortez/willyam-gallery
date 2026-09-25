@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClientServer } from "@/lib/supabase/server";
-import { deleteR2GalleryFolder } from "@/lib/r2/client";
+import { deleteR2GalleryFolder, getPresignedViewUrl } from "@/lib/r2/client";
 
 export async function GET(
   request: NextRequest,
@@ -37,7 +37,52 @@ export async function GET(
         return NextResponse.json({ error: error.message }, { status: 404 });
       }
 
-      return NextResponse.json({ gallery: data });
+      // 1. Gera as URLs assinadas de visualização para cada foto vinda do Cloudflare R2
+      const photosWithUrls = await Promise.all(
+        (data.photos || []).map(async (photo: any) => {
+          let preview_url = photo.preview_url;
+          if (!preview_url && photo.r2_key) {
+            try {
+              preview_url = await getPresignedViewUrl(photo.r2_key, 86400);
+            } catch (err) {
+              console.warn("Erro ao gerar URL para foto:", photo.r2_key, err);
+            }
+          }
+          return {
+            ...photo,
+            preview_url: preview_url || null,
+            thumbnail_url: preview_url || null,
+            download_url: preview_url || null,
+          };
+        })
+      );
+
+      // Ordena fotos por order_index
+      photosWithUrls.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+
+      // Ordena seções por order_index
+      const sortedSections = (data.sections || []).sort(
+        (a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0)
+      );
+
+      // 2. Resolve URL de capa
+      let coverUrl = data.cover_image_key;
+      if (coverUrl && !coverUrl.startsWith("http")) {
+        try {
+          coverUrl = await getPresignedViewUrl(coverUrl, 86400);
+        } catch (e) {}
+      } else if (!coverUrl && photosWithUrls.length > 0 && photosWithUrls[0].preview_url) {
+        coverUrl = photosWithUrls[0].preview_url;
+      }
+
+      return NextResponse.json({
+        gallery: {
+          ...data,
+          cover_image_key: coverUrl,
+          sections: sortedSections,
+          photos: photosWithUrls,
+        },
+      });
     }
 
     return NextResponse.json({ gallery: null });
