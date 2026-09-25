@@ -12,7 +12,7 @@ const accountId = process.env.R2_ACCOUNT_ID || "dummy-account-id";
 const accessKeyId = process.env.R2_ACCESS_KEY_ID || "dummy-access-key";
 const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "dummy-secret-key";
 
-export const r2BucketName = process.env.R2_BUCKET_NAME || "willyamcortez-photos-originals";
+export const r2BucketName = (process.env.R2_BUCKET_NAME || "galeria").trim().replace(/^["']|["']$/g, "");
 
 export const r2Client = new S3Client({
   region: "auto",
