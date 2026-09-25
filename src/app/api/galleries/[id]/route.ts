@@ -56,7 +56,9 @@ export async function PUT(
       !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-project")
     ) {
       const supabase = createClientServer();
-      const { data, error } = await supabase
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(galleryId);
+
+      let query = supabase
         .from("galleries")
         .update({
           title: body.title,
@@ -67,10 +69,15 @@ export async function PUT(
           google_drive_url: body.google_drive_url,
           selection_locked_at: body.selection_locked_at,
           updated_at: new Date().toISOString(),
-        })
-        .eq("id", galleryId)
-        .select()
-        .single();
+        });
+
+      if (isUUID) {
+        query = query.eq("id", galleryId);
+      } else {
+        query = query.eq("slug", galleryId);
+      }
+
+      const { data, error } = await query.select().single();
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });

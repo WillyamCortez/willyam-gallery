@@ -136,11 +136,32 @@ export default function EditGalleryPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetch(`/api/galleries/${gallery.id}`, {
+      const res = await fetch(`/api/galleries/${gallery.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(gallery),
+        body: JSON.stringify({
+          ...gallery,
+          sections,
+        }),
       });
+
+      if (typeof window !== "undefined") {
+        try {
+          const saved = localStorage.getItem("willyam_galleries");
+          const list = saved ? JSON.parse(saved) : [];
+          const updated = list.map((g: any) =>
+            g.id === gallery.id || g.slug === gallery.slug ? { ...g, ...gallery, sections } : g
+          );
+          localStorage.setItem("willyam_galleries", JSON.stringify(updated));
+        } catch (e) {}
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.gallery) {
+          setGallery((prev: any) => ({ ...prev, ...data.gallery }));
+        }
+      }
     } catch (e) {
       console.warn("Erro ao salvar galeria:", e);
     }
