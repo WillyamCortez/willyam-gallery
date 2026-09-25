@@ -138,7 +138,26 @@ export async function PUT(
 
       // Sincroniza seções no Supabase se enviadas
       if (body.sections && Array.isArray(body.sections)) {
-        for (const sec of body.sections) {
+        const keepSectionIds = body.sections
+          .map((sec: any) => sec.id)
+          .filter((id: any) => checkIsUUID(id));
+
+        // Exclui do banco as seções que o usuário removeu da lista
+        if (keepSectionIds.length > 0) {
+          await supabase
+            .from("sections")
+            .delete()
+            .eq("gallery_id", data.id)
+            .not("id", "in", `(${keepSectionIds.join(",")})`);
+        } else {
+          await supabase
+            .from("sections")
+            .delete()
+            .eq("gallery_id", data.id);
+        }
+
+        for (let i = 0; i < body.sections.length; i++) {
+          const sec = body.sections[i];
           if (sec.id && checkIsUUID(sec.id)) {
             await supabase
               .from("sections")
@@ -146,7 +165,7 @@ export async function PUT(
                 id: sec.id,
                 gallery_id: data.id,
                 name: sec.name,
-                order_index: typeof sec.order_index === "number" ? sec.order_index : 0,
+                order_index: i,
               });
           } else if (sec.name) {
             await supabase
@@ -154,7 +173,7 @@ export async function PUT(
               .insert({
                 gallery_id: data.id,
                 name: sec.name,
-                order_index: typeof sec.order_index === "number" ? sec.order_index : 0,
+                order_index: i,
               });
           }
         }

@@ -174,6 +174,9 @@ export default function EditGalleryPage() {
         const data = await res.json();
         if (data?.gallery) {
           setGallery((prev: any) => ({ ...prev, ...data.gallery }));
+          if (data.gallery.sections) {
+            setSections(data.gallery.sections);
+          }
         }
       }
     } catch (e) {
