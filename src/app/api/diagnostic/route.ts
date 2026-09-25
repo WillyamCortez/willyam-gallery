@@ -63,5 +63,19 @@ export async function GET() {
     }
   }
 
+  if (result.r2.account_configured) {
+    try {
+      const { r2Client, r2BucketName } = await import("@/lib/r2/client");
+      const { ListObjectsV2Command } = await import("@aws-sdk/client-s3");
+      const listRes = await r2Client.send(new ListObjectsV2Command({ Bucket: r2BucketName, MaxKeys: 20 }));
+      result.r2.connection = "ok";
+      result.r2.objects_count = listRes.KeyCount || 0;
+      result.r2.sample_keys = (listRes.Contents || []).map((o: any) => ({ key: o.Key, size: o.Size }));
+    } catch (r2Err: any) {
+      result.r2.connection = "error";
+      result.r2.error = r2Err.message;
+    }
+  }
+
   return NextResponse.json(result);
 }
