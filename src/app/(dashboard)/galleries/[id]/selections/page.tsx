@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { mockGalleries } from "@/lib/mock-data";
-import { Photo, GallerySection } from "@/types";
+import { Photo, GallerySection, Gallery } from "@/types";
 import { LightroomExportModal } from "@/components/dashboard/LightroomExportModal";
 import {
   ArrowLeft,
@@ -17,21 +17,12 @@ export default function GallerySelectionsReviewPage() {
   const params = useParams();
   const galleryId = params?.id as string;
 
-  const getGallery = () => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("willyam_galleries");
-      if (saved) {
-        try {
-          const list = JSON.parse(saved);
-          const found = list.find((g: any) => g.id === galleryId || g.slug === galleryId);
-          if (found) return found;
-        } catch (e) {}
-      }
-    }
-
+  const getStaticGallery = () => {
     return (
-      mockGalleries.find((g) => g.id === galleryId || g.slug === galleryId) || {
+      mockGalleries.find((g) => g.id === galleryId || g.slug === galleryId) ||
+      ({
         id: galleryId,
+        photographer_id: "",
         title: "Galeria",
         slug: galleryId,
         client_name: "",
@@ -40,11 +31,33 @@ export default function GallerySelectionsReviewPage() {
         extra_photo_price: 15,
         sections: [] as GallerySection[],
         photos: [] as Photo[],
-      }
+      } as Gallery)
     );
   };
 
-  const gallery = getGallery();
+  const [gallery, setGallery] = useState(getStaticGallery);
+
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem("willyam_galleries");
+      if (saved) {
+        const list = JSON.parse(saved);
+        const found = list.find((g: any) => g.id === galleryId || g.slug === galleryId);
+        if (found) setGallery(found);
+      }
+    } catch (e) {}
+
+    async function load() {
+      try {
+        const res = await fetch(`/api/galleries/${galleryId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.gallery) setGallery(data.gallery);
+        }
+      } catch (e) {}
+    }
+    load();
+  }, [galleryId]);
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { mockGalleries } from "@/lib/mock-data";
-import { Photo, GallerySection, GalleryStatus } from "@/types";
+import { Photo, GallerySection, GalleryStatus, Gallery } from "@/types";
 import { DirectR2Uploader } from "@/components/dashboard/DirectR2Uploader";
 import {
   ArrowLeft,
@@ -25,22 +25,12 @@ export default function EditGalleryPage() {
   const galleryId = params?.id as string;
 
   const getInitialGallery = () => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("willyam_galleries");
-      if (saved) {
-        try {
-          const list = JSON.parse(saved);
-          const found = list.find((g: any) => g.id === galleryId || g.slug === galleryId);
-          if (found) return found;
-        } catch (e) {}
-      }
-    }
-
     const staticFound = mockGalleries.find((g) => g.id === galleryId || g.slug === galleryId);
     if (staticFound) return staticFound;
 
     return {
       id: galleryId,
+      photographer_id: "",
       title: "Carregando Galeria...",
       slug: galleryId,
       client_name: "",
@@ -49,7 +39,7 @@ export default function EditGalleryPage() {
       extra_photo_price: 15.0,
       sections: [] as GallerySection[],
       photos: [] as Photo[],
-    };
+    } as Gallery;
   };
 
   const initialGallery = getInitialGallery();
@@ -60,8 +50,23 @@ export default function EditGalleryPage() {
   const [saveToast, setSaveToast] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Carrega os dados reais do Supabase se existirem
+  // Carrega os dados reais do Supabase ou localStorage no cliente
   React.useEffect(() => {
+    // 1. Tenta carregar do localStorage imediatamente no cliente
+    try {
+      const saved = localStorage.getItem("willyam_galleries");
+      if (saved) {
+        const list = JSON.parse(saved);
+        const found = list.find((g: any) => g.id === galleryId || g.slug === galleryId);
+        if (found) {
+          setGallery(found);
+          if (found.sections) setSections(found.sections);
+          if (found.photos) setPhotos(found.photos);
+        }
+      }
+    } catch (e) {}
+
+    // 2. Busca do Supabase
     async function loadGallery() {
       try {
         const res = await fetch(`/api/galleries/${galleryId}`);

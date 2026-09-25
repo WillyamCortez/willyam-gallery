@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { mockGalleries } from "@/lib/mock-data";
-import { Photo, GallerySection } from "@/types";
+import { Photo, GallerySection, Gallery } from "@/types";
 import { CoverHero } from "@/components/client/CoverHero";
 import { SectionTabs } from "@/components/client/SectionTabs";
 import { MasonryGrid } from "@/components/client/MasonryGrid";
@@ -18,20 +18,11 @@ export default function ClientGalleryPage() {
 
   // Busca galeria por slug nos mocks, localStorage ou Supabase
   const initialGallery = useMemo(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("willyam_galleries");
-      if (saved) {
-        try {
-          const list = JSON.parse(saved);
-          const found = list.find((g: any) => g.slug === slug || g.id === slug);
-          if (found) return found;
-        } catch (e) {}
-      }
-    }
-
     return (
-      mockGalleries.find((g) => g.slug === slug || g.id === slug) || {
+      mockGalleries.find((g) => g.slug === slug || g.id === slug) ||
+      ({
         id: slug,
+        photographer_id: "",
         title: "Carregando Galeria...",
         slug: slug,
         client_name: "",
@@ -40,7 +31,7 @@ export default function ClientGalleryPage() {
         extra_photo_price: 15,
         sections: [] as GallerySection[],
         photos: [] as Photo[],
-      }
+      } as Gallery)
     );
   }, [slug]);
 
@@ -51,8 +42,16 @@ export default function ClientGalleryPage() {
   const [activeLightboxPhotoId, setActiveLightboxPhotoId] = useState<string | null>(null);
   const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState(false);
 
-  // Carrega galeria real do Supabase
+  // Carrega galeria real do Supabase ou localStorage
   React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem("willyam_galleries");
+      if (saved) {
+        const list = JSON.parse(saved);
+        const found = list.find((g: any) => g.slug === slug || g.id === slug);
+        if (found) setGallery(found);
+      }
+    } catch (e) {}
     async function fetchLiveGallery() {
       try {
         const res = await fetch(`/api/galleries/${slug}`);
