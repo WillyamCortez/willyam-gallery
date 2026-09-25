@@ -97,7 +97,8 @@ export const DirectR2Uploader: React.FC<DirectR2UploaderProps> = ({
   const startBatchUpload = async () => {
     setIsProcessingBatch(true);
 
-    for (const item of fileQueue) {
+    for (let i = 0; i < fileQueue.length; i++) {
+      const item = fileQueue[i];
       if (item.status === "completed") continue;
 
       // Atualiza status para uploading
@@ -159,7 +160,7 @@ export const DirectR2Uploader: React.FC<DirectR2UploaderProps> = ({
               width: item.width,
               height: item.height,
               aspectRatio: item.width / item.height,
-              orderIndex: Date.now(),
+              orderIndex: i,
             }),
           });
           if (photoSaveRes.ok) {

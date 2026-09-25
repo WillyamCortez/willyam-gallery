@@ -62,7 +62,9 @@ export async function PUT(
       !supabaseUrl.includes("your-project")
     ) {
       const supabase = createClientServer();
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(galleryId);
+      const checkIsUUID = (val: any) =>
+        typeof val === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
       let query = supabase
         .from("galleries")
@@ -77,7 +79,7 @@ export async function PUT(
           updated_at: new Date().toISOString(),
         });
 
-      if (isUUID) {
+      if (checkIsUUID(galleryId)) {
         query = query.eq("id", galleryId);
       } else {
         query = query.eq("slug", galleryId);
@@ -92,14 +94,14 @@ export async function PUT(
       // Sincroniza seções no Supabase se enviadas
       if (body.sections && Array.isArray(body.sections)) {
         for (const sec of body.sections) {
-          if (sec.id && isUUID(sec.id)) {
+          if (sec.id && checkIsUUID(sec.id)) {
             await supabase
               .from("sections")
               .upsert({
                 id: sec.id,
                 gallery_id: data.id,
                 name: sec.name,
-                order_index: sec.order_index ?? 0,
+                order_index: typeof sec.order_index === "number" ? sec.order_index : 0,
               });
           } else if (sec.name) {
             await supabase
@@ -107,7 +109,7 @@ export async function PUT(
               .insert({
                 gallery_id: data.id,
                 name: sec.name,
-                order_index: sec.order_index ?? 0,
+                order_index: typeof sec.order_index === "number" ? sec.order_index : 0,
               });
           }
         }

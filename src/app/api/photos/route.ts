@@ -60,7 +60,11 @@ export async function POST(request: NextRequest) {
         if (sec?.id) {
           realSectionId = sec.id;
         }
-      }
+      // 3. Garante que order_index esteja no range válido de INTEGER do PostgreSQL (-2147483648 a 2147483647)
+      const safeOrderIndex =
+        typeof orderIndex === "number" && !isNaN(orderIndex)
+          ? Math.floor(Math.abs(orderIndex)) % 2147483647
+          : 0;
 
       const { data, error } = await supabase
         .from("photos")
@@ -72,7 +76,7 @@ export async function POST(request: NextRequest) {
           width: width || 2400,
           height: height || 1600,
           aspect_ratio: aspectRatio || 1.5,
-          order_index: orderIndex || 0,
+          order_index: safeOrderIndex,
         })
         .select()
         .single();
