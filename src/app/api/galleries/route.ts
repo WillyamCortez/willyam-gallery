@@ -150,17 +150,30 @@ export async function POST(request: NextRequest) {
       }
 
       // 2. Se houver seções iniciais, cadastra na tabela sections
+      let createdSections: any[] = [];
       if (sections && sections.length > 0) {
         const sectionsData = sections.map((secName: string, index: number) => ({
           gallery_id: gallery.id,
-          name: secName.trim(),
+          name: typeof secName === "string" ? secName.trim() : (secName as any).name || "Seção",
           order_index: index,
         }));
 
-        await supabase.from("sections").insert(sectionsData);
+        const { data: insertedSections } = await supabase
+          .from("sections")
+          .insert(sectionsData)
+          .select();
+
+        createdSections = insertedSections || [];
       }
 
-      return NextResponse.json({ success: true, gallery });
+      return NextResponse.json({
+        success: true,
+        gallery: {
+          ...gallery,
+          sections: createdSections,
+          photos: [],
+        },
+      });
     }
 
     // Retorno de fallback mock completo

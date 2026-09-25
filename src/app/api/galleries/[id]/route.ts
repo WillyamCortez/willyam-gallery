@@ -89,7 +89,40 @@ export async function PUT(
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ success: true, gallery: data });
+      // Sincroniza seções no Supabase se enviadas
+      if (body.sections && Array.isArray(body.sections)) {
+        for (const sec of body.sections) {
+          if (sec.id && isUUID(sec.id)) {
+            await supabase
+              .from("sections")
+              .upsert({
+                id: sec.id,
+                gallery_id: data.id,
+                name: sec.name,
+                order_index: sec.order_index ?? 0,
+              });
+          } else if (sec.name) {
+            await supabase
+              .from("sections")
+              .insert({
+                gallery_id: data.id,
+                name: sec.name,
+                order_index: sec.order_index ?? 0,
+              });
+          }
+        }
+      }
+
+      const { data: updatedSections } = await supabase
+        .from("sections")
+        .select("*")
+        .eq("gallery_id", data.id)
+        .order("order_index", { ascending: true });
+
+      return NextResponse.json({
+        success: true,
+        gallery: { ...data, sections: updatedSections || [] },
+      });
     }
 
     return NextResponse.json({ success: true, gallery: body });

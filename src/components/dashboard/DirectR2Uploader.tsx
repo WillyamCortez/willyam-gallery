@@ -32,6 +32,14 @@ export const DirectR2Uploader: React.FC<DirectR2UploaderProps> = ({
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
     sections[0]?.id || null
   );
+
+  React.useEffect(() => {
+    if (sections.length > 0 && (!selectedSectionId || !sections.some((s) => s.id === selectedSectionId))) {
+      setSelectedSectionId(sections[0].id);
+    } else if (sections.length === 0) {
+      setSelectedSectionId(null);
+    }
+  }, [sections]);
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -138,13 +146,14 @@ export const DirectR2Uploader: React.FC<DirectR2UploaderProps> = ({
 
         // 3. Registra os metadados da foto no Supabase
         let photoDbId = `photo-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.sectionId || "");
         try {
           const photoSaveRes = await fetch("/api/photos", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               galleryId,
-              sectionId: item.sectionId || null,
+              sectionId: isUUID ? item.sectionId : null,
               r2Key,
               originalFilename: item.file.name,
               width: item.width,
@@ -158,6 +167,9 @@ export const DirectR2Uploader: React.FC<DirectR2UploaderProps> = ({
             if (photoData?.photo?.id) {
               photoDbId = photoData.photo.id;
             }
+          } else {
+            const errData = await photoSaveRes.json().catch(() => ({}));
+            console.error("Erro ao registrar foto no banco:", errData);
           }
         } catch (dbErr) {
           console.warn("Aviso ao salvar foto no Supabase:", dbErr);

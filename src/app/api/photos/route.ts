@@ -31,11 +31,42 @@ export async function POST(request: NextRequest) {
       !supabaseUrl.includes("your-project")
     ) {
       const supabase = createClientServer();
+
+      const isUUID = (val: any) =>
+        typeof val === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+      // 1. Resolve o ID real da galeria (se foi passado um slug)
+      let realGalleryId = galleryId;
+      if (!isUUID(galleryId)) {
+        const { data: g } = await supabase
+          .from("galleries")
+          .select("id")
+          .eq("slug", galleryId)
+          .maybeSingle();
+        if (g?.id) {
+          realGalleryId = g.id;
+        }
+      }
+
+      // 2. Valida se section_id é um UUID válido e realmente existe na tabela sections
+      let realSectionId: string | null = null;
+      if (sectionId && isUUID(sectionId)) {
+        const { data: sec } = await supabase
+          .from("sections")
+          .select("id")
+          .eq("id", sectionId)
+          .maybeSingle();
+        if (sec?.id) {
+          realSectionId = sec.id;
+        }
+      }
+
       const { data, error } = await supabase
         .from("photos")
         .insert({
-          gallery_id: galleryId,
-          section_id: sectionId || null,
+          gallery_id: realGalleryId,
+          section_id: realSectionId,
           r2_key: r2Key,
           original_filename: originalFilename,
           width: width || 2400,
